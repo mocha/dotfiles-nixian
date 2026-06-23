@@ -1,7 +1,7 @@
 # hyprshell notes / gotchas
 
 Hyprland launcher (Super+R → Overview → type). GTK4. Config here: `config.ron` (behavior),
-`styles.css` (Catppuccin theme — see also `~/.config/THEMING.md`). Written 2026-06-20.
+`styles.css` (Catppuccin theme — see also [`theming.md`](theming.md)). Written 2026-06-20.
 
 ---
 
@@ -113,7 +113,7 @@ daemon and re-test before trusting a size — never judge against a hot-reload.*
 ## Operating the daemon
 
 - Launched by `~/.config/hypr/hyprland.lua` via `hyprshell run` with `DISPLAY=:0` set (so it
-  reads X dconf/XSettings for the GTK theme — see THEMING.md gotcha #9).
+  reads X dconf/XSettings for the GTK theme — see theming.md gotcha #9).
 - **Hot-reload exists but is UNRELIABLE — always restart to be sure.** The daemon logs
   `Starting hyprshell css reload listener` (and a config one) at startup, so edits *sometimes*
   re-render live. But it goes stale silently: a saved change shows "nothing changed" and you

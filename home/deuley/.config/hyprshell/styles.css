@@ -1,6 +1,6 @@
 /* hyprshell — Catppuccin Mocha (mauve accent)
  *
- * Matches the rest of the desktop (see ~/.config/THEMING.md): Catppuccin Mocha
+ * Matches the rest of the desktop (see ~/.config/meta/docs/theming.md): Catppuccin Mocha
  * everywhere, mauve as the accent. hyprshell ships its layout in an embedded
  * stylesheet (crates/{launcher,windows}-lib/src/styles.css) whose colors are all
  * `var(--token, fallback)`. This file is layered on top at GTK USER priority, so
@@ -34,7 +34,7 @@
  * Default path: $XDG_CONFIG_HOME/hyprshell/styles.css  (hyprshell --css-file)
  * Hot-reload: the daemon runs a css reload listener (log: "Starting hyprshell css
  * reload listener"), so edits re-render live. It can be flaky — if a change does
- * not show, restart the daemon (see NOTES.md "Operating the daemon").
+ * not show, restart the daemon (see ~/.config/meta/docs/hyprshell.md "Operating the daemon").
  *
  * SCALE: eDP-1 runs at Wayland scale 2.0, and GTK doubles every font on top of
  * the rem value. So a "1.4rem" name renders ~visually-2.8rem. All sizes below are
