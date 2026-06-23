@@ -1,0 +1,220 @@
+/* hyprshell — Catppuccin Mocha (mauve accent)
+ *
+ * Matches the rest of the desktop (see ~/.config/THEMING.md): Catppuccin Mocha
+ * everywhere, mauve as the accent. hyprshell ships its layout in an embedded
+ * stylesheet (crates/{launcher,windows}-lib/src/styles.css) whose colors are all
+ * `var(--token, fallback)`. This file is layered on top at GTK USER priority, so
+ * a plain class selector here overrides the app's default for that same class —
+ * AND a universal `*` selector here beats the app's class rules too (USER > APP
+ * regardless of specificity). That's why `* { font-size }` flattened everything;
+ * we now set font-size per class instead.
+ *
+ * Widget tree (the "DOM" — from the v4.10.4 source sheets):
+ *
+ *   .launcher                     outer panel (padding/bg/border/radius/shadow)
+ *   ├── .launcher-input           search field
+ *   ├── .launcher-results
+ *   │   └── .launcher-item        row wrapper
+ *   │       └── .launcher-item-inner   :hover bg
+ *   │           ├── .launcher-item-image
+ *   │           ├── .launcher-item-name
+ *   │           ├── .launcher-item-details   monospace, dimmed
+ *   │           └── .launcher-key            the Ctrl+N pill
+ *   ├── .launcher-plugins         border-top separator
+ *   │   └── .launcher-plugin
+ *   │       └── .launcher-plugin-inner  ├ -image  └ -plugin-key
+ *   └── .launcher-other-menu      popover (separate toplevel → tokens live on *)
+ *   .launch  → sweep-gradient animation when a row is activated
+ *
+ *   .monitor                      overview / Alt-switch container
+ *   └── .workspace                workspace box (.active, .special)
+ *       └── .client               window box (.active, :hover)
+ *           └── .client-image     app icon
+ *
+ * Default path: $XDG_CONFIG_HOME/hyprshell/styles.css  (hyprshell --css-file)
+ * Hot-reload: the daemon runs a css reload listener (log: "Starting hyprshell css
+ * reload listener"), so edits re-render live. It can be flaky — if a change does
+ * not show, restart the daemon (see NOTES.md "Operating the daemon").
+ *
+ * SCALE: eDP-1 runs at Wayland scale 2.0, and GTK doubles every font on top of
+ * the rem value. So a "1.4rem" name renders ~visually-2.8rem. All sizes below are
+ * picked for how they look AT 2x — judge them only after a real daemon restart on
+ * this monitor, never against a stale hot-reload (that combination is exactly what
+ * made us tune blind and overshoot last time).
+ *
+ * Palette: https://github.com/catppuccin/catppuccin (Mocha)
+ */
+
+/* ---- Catppuccin Mocha palette ------------------------------------------ */
+@define-color base     #1e1e2e;
+@define-color mantle   #181825;
+@define-color crust    #11111b;
+@define-color surface0 #313244;
+@define-color surface1 #45475a;
+@define-color surface2 #585b70;
+@define-color overlay0 #6c7086;
+@define-color text     #cdd6f4;
+@define-color subtext0 #a6adc8;
+@define-color mauve    #cba6f7;
+@define-color red      #f38ba8;
+@define-color green    #a6e3a1;
+@define-color peach    #fab387;
+
+/* ---- Design tokens hyprshell reads via var() --------------------------- *
+ * Set on the universal selector so they also reach the "other menu" popover,
+ * which is a separate top-level surface and wouldn't inherit from .launcher.
+ * NOTE: keep font-size OUT of this block — a universal font-size wins over the
+ * app's per-class sizes and flattens the whole hierarchy. Size per class below. */
+* {
+    --window-padding: 5px;
+    --border-radius: 0.6rem;
+    --border-size: 2px;
+    --border-style: solid;
+
+    --bg-window-color: rgba(30, 30, 46, 0.98); /* base  — panel background   */
+    --bg-color: transparent; /* items blend into the panel */
+    --bg-color-hover: #313244; /* surface0 — hover           */
+    --border-color: rgba(69, 71, 90, 0.6); /* surface1 — subtle frame    */
+    --border-color-active: #cba6f7; /* mauve — was a harsh red     */
+
+    font-family: "Monoflow";
+}
+
+/* Inherit Catppuccin text everywhere (popover included). */
+.launcher,
+.monitor,
+.launcher-other-menu {
+    color: @text;
+}
+
+/* Softer, cooler drop shadow than the stock blue-grey one. */
+.launcher,
+.monitor {
+    box-shadow: 0 0 24px 6px rgba(17, 17, 27, 0.6); /* crust */
+}
+
+/* ---- Search field ------------------------------------------------------ *
+ * Biggest text in the launcher (the live query). Tighter padding than stock so
+ * the field isn't a tall empty box. */
+.launcher-input {
+    font-size: 0.9rem;
+    margin: 6px;
+    padding: 5px 10px;
+    background: @mantle;
+    color: @text;
+    border-radius: 10px;
+    border: 1px solid @surface0;
+    caret-color: @mauve;
+}
+
+.launcher-input:focus,
+.launcher-input:focus-within {
+    border-color: @mauve;
+}
+
+/* ---- Result rows ------------------------------------------------------- *
+ * Hierarchy: name (1.4) > key pill (1.25) > details (1.2 floor). Compact
+ * vertical padding keeps the program list dense. */
+.launcher-item-inner {
+    font-size: 0.75rem;
+    padding: 1px 8px;
+}
+/* Row layout is a fixed horizontal box in result.rs ([icon][name][details][key]),
+ * so name + command can't stack. Instead make the read order obvious by size:
+ * name is the big bright bold primary; command is the smaller dim monospace
+ * secondary, set apart with a left margin. Set font-size directly on each label —
+ * .launcher-item-name does NOT inherit from .launcher-item-inner, so without this
+ * it falls back to the tiny GTK theme default (the bug that made it look inverted). */
+.launcher-item-name {
+    font-size: 0.9rem;
+    color: @text;
+    font-weight: bold;
+}
+.launcher-item-details {
+    font-size: 0.65rem;
+    color: @subtext0;
+    margin-left: 12px;
+    opacity: 0.6;
+}
+
+/* Launch-shortcut pills → small mauve pill. Shared look; size + behaviour differ
+ * per context below. */
+.launcher-key,
+.launcher-plugin-key {
+    color: @mauve;
+    background: alpha(@mauve, 0.12);
+    border-radius: 8px;
+    padding: 1px 8px;
+    font-weight: bold;
+}
+
+/* App rows: the pill is handy but visually loud, so dim it by default and bring
+ * it to full strength only when its row is hovered/highlighted. */
+.launcher-key {
+    font-size: 0.65rem;
+    margin-left: 6px;
+    opacity: 0.4;
+    transition: opacity 120ms ease;
+}
+.launcher-item-inner:hover .launcher-key {
+    opacity: 1;
+}
+
+/* Plugin / automation rows (terminal, Kagi, Wikipedia, NixOS): a hair smaller than
+ * the command text above (1.2rem) so the key label isn't clipped; tighter spacing. */
+.launcher-plugin-key {
+    font-size: 0.55rem;
+    margin-left: 4px;
+    padding: 1px 6px;
+}
+
+/* "Other menu" popover items. */
+.launcher-other-menu-item-inner {
+    font-size: 0.95rem;
+}
+
+/* Dim disabled plugins. */
+.monochrome {
+    opacity: 0.25;
+}
+
+/* Smooth the hover/active feedback across interactive surfaces. */
+.launcher-item-inner,
+.launcher-plugin-inner,
+.launcher-other-menu-item-inner,
+.launcher-other-menu-button,
+.client {
+    transition:
+        background 200ms ease,
+        border-color 200ms ease;
+}
+
+/* ---- Overview / switcher ----------------------------------------------- */
+.workspace {
+    font-size: 0.95rem;
+    color: @text;
+}
+
+/* Recolor the special-workspace glow to Catppuccin green. */
+.workspace.special {
+    box-shadow: inset 0 0 10px alpha(@green, 0.8);
+}
+
+/* Window boxes: drop internal padding, add a real gap between them (the stock
+ * sheet sets neither, so they crowd together). */
+.client {
+    font-size: 0.62rem;
+    padding: 0;
+    margin: 7px;
+    color: @text;
+}
+
+/* App icon overlaid on each window box. Its pixel size is set in Rust from a
+ * hardcoded auto-fit formula (calc_image_size: box/1.6 - 20), so width/min-* can't
+ * cap it (they're floors). A CSS `transform: scale()` is the one remaining lever —
+ * it shrinks the rendered glyph within its (unchanged) box allocation. */
+.client-image {
+    transform: scale(0.6);
+    margin-top: 2px;
+    margin-bottom: 2px;
+}

@@ -1,0 +1,28 @@
+(
+    version: 4,
+    windows: (
+        overview: (
+            launcher: (
+                default_terminal: "ghostty",
+                plugins: (
+                    applications: (),
+                    terminal: (),
+                    websearch: (
+                        engines: [
+                            (url: "https://kagi.com/search?q={}", name: "Kagi", key: 's'),
+                            (url: "https://en.wikipedia.org/wiki/Special:Search?search={}", name: "Wikipedia", key: 'w'),
+                            (url: "https://search.nixos.org/packages?channel=26.05&query={}", name: "NixOS", key: 'n'),
+                        ],
+                    ),
+                    path: (),
+                    actions: (),
+                ),
+            ),
+            modifier: "super",
+            key: "r",
+        ),
+        switch: (
+            modifier: "alt",
+        ),
+    ),
+)

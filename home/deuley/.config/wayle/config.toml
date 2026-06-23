@@ -1,0 +1,157 @@
+[general]
+font-sans = "Monoflow"
+font-mono = "Monoflow"
+
+
+[modules.hyprland-workspaces]
+min-workspace-count = 3
+label-use-name = true
+app-icons-show = true
+workspace-padding = 2
+icon-size = 1.2
+
+
+[bar]
+scale = 1.0
+padding = 0.5
+location = "top"
+bg = "bg-base"
+button-bg-opacity = 76
+button-icon-size = 0.8
+button-icon-padding = 1.2
+button-label-size = 0.8
+button-label-weight = "bold"
+button-label-padding = 1.25
+button-rounding = "md"
+button-gap = 3.0
+
+[[modules.custom]]
+id = "keyboard"
+mode = "poll"
+interval-ms = 5000
+restart-policy = "never"
+restart-interval-ms = 1000
+format = "{{ output }}"
+tooltip-format = "Toggle on-screen keyboard"
+hide-if-empty = false
+icon-name = "ld-keyboard-symbolic"
+icon-show = true
+icon-color = "auto"
+icon-bg-color = "blue"
+label-show = false
+label-color = "auto"
+label-max-length = 0
+button-bg-color = "bg-surface-elevated"
+border-show = false
+border-color = "auto"
+left-click = "/home/deuley/.config/hypr/scripts/squeek-toggle.sh"
+right-click = ""
+middle-click = ""
+scroll-up = ""
+scroll-down = ""
+
+[[bar.layout]]
+monitor = "*"
+show = true
+left = [
+    "dashboard",
+    "hyprland-workspaces",
+    "window-title",
+    "systray",
+]
+center = [
+    "clock",
+    "weather",
+]
+right = [
+    "media",
+    "volume",
+    "bluetooth",
+    "network",
+    "brightness",
+    "notifications",
+    "battery",
+    "custom-keyboard",
+]
+
+
+[modules.battery]
+icon-color = "bg-base"
+icon-bg-color = "red"
+label-show = false
+
+[[modules.battery.thresholds]]
+above = 15
+icon-color = "red"
+icon-bg-color = "bg-surface-elevated"
+
+[[modules.battery.thresholds]]
+above = 30
+icon-color = "yellow"
+icon-bg-color = "bg-surface-elevated"
+
+[[modules.battery.thresholds]]
+above = 60
+icon-color = "green"
+icon-bg-color = "bg-surface-elevated"
+
+[[modules.battery.thresholds]]
+above = 90
+icon-color = "#000"
+icon-bg-color = "green"
+
+
+
+[modules.bluetooth]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+
+
+[modules.brightness]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+# scroll-up = "brightnessctl --device=intel_backlight set 5%+"
+# scroll-up = "brightnessctl --device=intel_backlight set 5%-"
+
+
+[modules.clock]
+format = "%I:%M %p"
+border-color = "status-info"
+icon-show = false
+icon-color = "status-info"
+icon-bg-color = "transparent"
+label-color = "#ffffff"
+button-bg-color = "transparent"
+
+
+[modules.weather]
+location = "78218"
+units = "imperial"
+refresh-interval-seconds = 600
+icon-show = false
+button-bg-color = "transparent"
+
+[modules.window-title]
+label-color = "bg-base"
+button-bg-color = "status-info"
+
+
+[modules.network]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+label-color = "bg-surface-elevated"
+
+
+[modules.notifications]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+label-color = "border-subtle"
+
+[modules.volume]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
