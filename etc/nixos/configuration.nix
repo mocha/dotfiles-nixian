@@ -465,6 +465,8 @@ Run 'fwupdmgr update' to install."
     wtype
     cliphist
     fuzzel
+    rofimoji # emoji/unicode picker; drives fuzzel + wtype (Super+. keybind)
+    qalculate-qt # scientific calculator GUI (themes via Kvantum/Qt stack)
     (callPackage ./pkgs/dictation { })
     (callPackage ./pkgs/hyprsaver { }) # Wayland screensaver, driven by hypridle (see ./pkgs/hyprsaver)
     adwaita-icon-theme # freedesktop symbolic icons (hyprpanel etc.)

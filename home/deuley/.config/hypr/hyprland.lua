@@ -339,6 +339,9 @@ hl.bind("SUPER + SHIFT + F23", hl.dsp.exec_cmd("dictation-toggle"))
 hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("DICTATION_NOPASTE=1 dictation-toggle"))
 -- Clipboard/transcript history picker (SUPER+V is window-float toggle, so SHIFT+V):
 hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("sh -c 'cliphist list | fuzzel --dmenu --with-nth 2 | cliphist decode | wl-copy'"))
+-- Emoji / unicode picker (rofimoji via fuzzel); types the glyph into the focused
+-- window. At the picker, alt+c copies instead, alt+1/2/… insert recent favorites.
+hl.bind(mainMod .. " + period", hl.dsp.exec_cmd("rofimoji --selector fuzzel --action type"))
 
 -- Move focus with mainMod + arrows
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))

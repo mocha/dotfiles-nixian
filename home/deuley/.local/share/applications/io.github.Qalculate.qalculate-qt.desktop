@@ -1,0 +1,16 @@
+[Desktop Entry]
+# User override of the system qalculate-qt entry (same filename → wins in the
+# launcher) purely to rename it to something memorable. Added 2026-06-23.
+Version=1.0
+Name=Calculator
+GenericName=Calculator
+Comment=Powerful and easy to use calculator (Qalculate!)
+TryExec=qalculate-qt
+Exec=qalculate-qt
+Icon=qalculate-qt
+Terminal=false
+Type=Application
+StartupNotify=true
+StartupWMClass=qalculate-qt
+Categories=Qt;Utility;Calculator;Education;Science;Math;
+Keywords=calc;calculator;calculation;arithmetic;rpn;math;
