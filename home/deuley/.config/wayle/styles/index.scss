@@ -1,0 +1,23 @@
+// Custom Wayle styles. Anything here overrides the built-in styling.
+// Use @import "name" to bring in _name.scss from this folder.
+
+// Dictation indicator (custom-dictation module). The module sets a CSS class via
+// class-format = "dictation-{{ alt }}" → .dictation-idle / .dictation-recording / .dictation-down.
+// Symbolic icons inherit `color`, so tinting the node tints the mic glyph.
+.dictation-recording,
+.dictation-recording image,
+.dictation-recording label {
+  color: #f38ba8; // catppuccin red — recording
+}
+.dictation-recording {
+  animation: dictation-pulse 1.2s ease-in-out infinite;
+}
+.dictation-down,
+.dictation-down image {
+  color: #6c7086; // dim — server down
+}
+
+@keyframes dictation-pulse {
+  0%, 100% { opacity: 1.0; }
+  50%      { opacity: 0.35; }
+}

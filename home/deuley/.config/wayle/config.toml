@@ -3,27 +3,59 @@ font-sans = "Monoflow"
 font-mono = "Monoflow"
 
 
-[modules.hyprland-workspaces]
-min-workspace-count = 3
-label-use-name = true
-app-icons-show = true
-workspace-padding = 2
-icon-size = 1.2
+[styling]
+scale = 1.0
+rounding = "md"
 
 
 [bar]
 scale = 1.0
-padding = 0.5
+padding = 0.2
+padding-ends = 0.2
+module-gap = 0.2
 location = "top"
 bg = "bg-base"
+button-variant = "basic"
 button-bg-opacity = 76
 button-icon-size = 0.8
-button-icon-padding = 1.2
+button-icon-padding = 1.1
 button-label-size = 0.8
 button-label-weight = "bold"
 button-label-padding = 1.25
 button-rounding = "md"
-button-gap = 3.0
+button-gap = 0.7
+button-group-border-width = 14
+button-group-rounding = "md"
+
+[[bar.layout]]
+monitor = "*"
+show = true
+left = [
+    "dashboard",
+    "hyprland-workspaces",
+    "window-title",
+    "systray",
+]
+center = [
+    "clock",
+]
+right = [
+    "weather",
+    "media",
+    { name = "group", modules = [
+        "volume",
+        "bluetooth",
+        "network",
+        "brightness",
+        "battery",
+    ] },
+    "custom-dictation",
+    "custom-keyboard",
+    "notifications",
+]
+
+
+# ---- Custom (shell-backed) modules ------------------------------------------
 
 [[modules.custom]]
 id = "keyboard"
@@ -50,30 +82,120 @@ middle-click = ""
 scroll-up = ""
 scroll-down = ""
 
-[[bar.layout]]
-monitor = "*"
-show = true
-left = [
-    "dashboard",
-    "hyprland-workspaces",
-    "window-title",
-    "systray",
-]
-center = [
-    "clock",
-    "weather",
-]
-right = [
-    "media",
-    "volume",
-    "bluetooth",
-    "network",
-    "brightness",
-    "notifications",
-    "battery",
-    "custom-keyboard",
-]
+# Local NPU dictation: icon reflects state via dictation-status.sh (down/idle/recording);
+# left-click toggles. Styled in styles/index.scss via class-format "dictation-<alt>".
+[[modules.custom]]
+id = "dictation"
+mode = "poll"
+interval-ms = 1000
+restart-policy = "never"
+restart-interval-ms = 1000
+command = "/home/deuley/.config/hypr/scripts/dictation-status.sh"
+format = "{{ output }}"
+tooltip-format = "{{ tooltip }}"
+hide-if-empty = false
+icon-name = "ld-mic-symbolic"
+icon-map = { idle = "ld-mic-symbolic", recording = "ld-mic-symbolic", down = "ld-mic-off-symbolic", default = "ld-mic-off-symbolic" }
+class-format = "dictation-{{ alt }}"
+icon-show = true
+icon-color = "auto"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+label-color = "auto"
+label-max-length = 0
+button-bg-color = "bg-surface-elevated"
+border-show = false
+border-color = "auto"
+left-click = "/run/current-system/sw/bin/dictation-toggle"
+on-action = "/home/deuley/.config/hypr/scripts/dictation-status.sh"
+right-click = ""
+middle-click = ""
+scroll-up = ""
+scroll-down = ""
 
+
+# ---- Built-in modules --------------------------------------------------------
+
+[modules.hyprland-workspaces]
+min-workspace-count = 6
+label-use-name = false
+app-icons-show = true
+workspace-padding = 0.6
+icon-size = 0.5
+label-size = 0.6
+occupied-color = "fg-subtle"
+empty-color = "fg-muted"
+container-bg-color = "bg-active"
+border-show = true
+
+[modules.dashboard]
+border-show = true
+border-color = "blue"
+icon-color = "blue"
+icon-bg-color = "blue"
+
+[modules.clock]
+format = "%I:%M %p"
+border-color = "status-info"
+icon-show = false
+icon-color = "status-info"
+icon-bg-color = "transparent"
+label-color = "#ffffff"
+button-bg-color = "transparent"
+
+[modules.weather]
+location = "78218"
+units = "imperial"
+refresh-interval-seconds = 600
+icon-show = false
+button-bg-color = "transparent"
+label-color = "fg-muted"
+
+[modules.window-title]
+border-show = true
+border-color = "bg-hover"
+icon-color = "status-warning"
+icon-bg-color = "transparent"
+label-color = "status-warning"
+button-bg-color = "transparent"
+
+[modules.media]
+icon-color = "fg-muted"
+icon-bg-color = "bg-surface-elevated"
+label-color = "fg-muted"
+button-bg-color = "transparent"
+label-max-length = 20
+
+[modules.volume]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+scroll-up = "wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 1%+"
+scroll-down = "wpctl set-volume @DEFAULT_AUDIO_SINK@ 1%-"
+
+[modules.bluetooth]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+
+[modules.network]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+label-color = "bg-surface-elevated"
+
+[modules.brightness]
+icon-color = "fg-subtle"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+scroll-up = "brightnessctl --device=intel_backlight set 1%+"
+scroll-down = "brightnessctl --device=intel_backlight set 1%-"
+
+[modules.notifications]
+icon-color = "blue"
+icon-bg-color = "bg-surface-elevated"
+label-show = false
+label-color = "border-subtle"
 
 [modules.battery]
 icon-color = "bg-base"
@@ -97,61 +219,38 @@ icon-bg-color = "bg-surface-elevated"
 
 [[modules.battery.thresholds]]
 above = 90
-icon-color = "#000"
-icon-bg-color = "green"
+icon-color = "green"
+icon-bg-color = "bg-surface-elevated"
 
-
-
-[modules.bluetooth]
+[[modules.battery.thresholds]]
+above = 99
 icon-color = "fg-subtle"
 icon-bg-color = "bg-surface-elevated"
-label-show = false
 
-
-[modules.brightness]
-icon-color = "fg-subtle"
-icon-bg-color = "bg-surface-elevated"
-label-show = false
-# scroll-up = "brightnessctl --device=intel_backlight set 5%+"
-# scroll-up = "brightnessctl --device=intel_backlight set 5%-"
-
-
-[modules.clock]
-format = "%I:%M %p"
-border-color = "status-info"
+# Dashboard popup stat modules (icon-less, compact formats)
+[modules.cpu]
+format = "C/{{ percent }}%"
 icon-show = false
-icon-color = "status-info"
-icon-bg-color = "transparent"
-label-color = "#ffffff"
-button-bg-color = "transparent"
 
-
-[modules.weather]
-location = "78218"
-units = "imperial"
-refresh-interval-seconds = 600
+[modules.ram]
+format = "M/{{ percent }}%"
 icon-show = false
-button-bg-color = "transparent"
 
-[modules.window-title]
-label-color = "bg-base"
-button-bg-color = "status-info"
+[modules.storage]
+format = "D/{{ percent }}%"
+icon-show = false
 
-
-[modules.network]
-icon-color = "fg-subtle"
-icon-bg-color = "bg-surface-elevated"
-label-show = false
-label-color = "bg-surface-elevated"
+[modules.netstat]
+format = "N/d{{ down_auto }} / u{{ up_auto }}"
+icon-show = false
 
 
-[modules.notifications]
-icon-color = "fg-subtle"
-icon-bg-color = "bg-surface-elevated"
-label-show = false
-label-color = "border-subtle"
+[wallpaper]
+cycling-enabled = true
+cycling-directory = "/home/deuley/Pictures/wallpapers/Misc"
+cycling-interval-mins = 18
 
-[modules.volume]
-icon-color = "fg-subtle"
-icon-bg-color = "bg-surface-elevated"
-label-show = false
+[[wallpaper.monitors]]
+name = ""
+fit-mode = "fill"
+wallpaper = ""

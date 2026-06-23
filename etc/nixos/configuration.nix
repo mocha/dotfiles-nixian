@@ -280,6 +280,9 @@ Run 'fwupdmgr update' to install."
   environment.etc."hypr/plugins/libhyprspace.so".source =
     "${pkgs.hyprlandPlugins.hyprspace}/lib/libhyprspace.so";
 
+  # Rootless containers (whisper-npu server) run under podman.
+  virtualisation.podman.enable = true;
+
   # Define a user account. Don't forget to set a password with ‘passwd’.
   users.users.deuley = {
     isNormalUser = true;
@@ -288,8 +291,13 @@ Run 'fwupdmgr update' to install."
       "networkmanager"
       "wheel"
     ];
+    subUidRanges = [ { startUid = 100000; count = 65536; } ];
+    subGidRanges = [ { startGid = 100000; count = 65536; } ];
+    linger = true;
     packages = with pkgs; [
       kdePackages.dolphin # file manager
+      kdePackages.kwalletmanager # GUI to view/delete KWallet secrets (e.g. stale smb guest creds)
+      kdePackages.kwallet # kwalletd6 daemon + DBus activation (org.kde.kwalletd6) so the wallet can start on demand
       mtr 		# modern tracert
       eza 		# modern ls
       nfs-utils
@@ -401,6 +409,27 @@ Run 'fwupdmgr update' to install."
   # prompt ever appears and pkexec hangs. Strip it for this service only.
   systemd.user.services.hyprpolkitagent.serviceConfig.UnsetEnvironment = "QT_STYLE_OVERRIDE";
 
+  systemd.user.services.whisper-npu = {
+    description = "Whisper NPU server (rootless podman, model kept warm)";
+    wantedBy = [ "default.target" ];
+    after = [ "default.target" ];
+    unitConfig.ConditionUser = "deuley";
+    serviceConfig = {
+      ExecStartPre = "-${pkgs.podman}/bin/podman rm -f whisper-server";
+      ExecStart = ''
+        ${pkgs.podman}/bin/podman run --rm --replace --name whisper-server \
+          -v %h/.whisper/models:/root/.whisper/models \
+          -p 127.0.0.1:8009:5000 \
+          --security-opt seccomp=unconfined --ipc=host --group-add keep-groups \
+          --device=/dev/dri --device=/dev/accel/accel0 \
+          localhost/whisper-npu-ptl:local
+      '';
+      ExecStop = "${pkgs.podman}/bin/podman stop -t 10 whisper-server";
+      Restart = "on-failure";
+      RestartSec = 5;
+    };
+  };
+
   programs.firefox.enable = true;
   programs.steam.enable = true;
   programs.git.enable = true;
@@ -433,6 +462,10 @@ Run 'fwupdmgr update' to install."
   environment.systemPackages = with pkgs; [
     kitty
     iwd
+    wtype
+    cliphist
+    fuzzel
+    (callPackage ./pkgs/dictation { })
     (callPackage ./pkgs/hyprsaver { }) # Wayland screensaver, driven by hypridle (see ./pkgs/hyprsaver)
     adwaita-icon-theme # freedesktop symbolic icons (hyprpanel etc.)
     hicolor-icon-theme # base theme everything else inherits from

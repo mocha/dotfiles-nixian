@@ -48,6 +48,7 @@ hl.config({
         sensitivity  = 0,
         touchpad = {
             natural_scroll = false,
+            scroll_factor  = 0.3,
         },
     },
 })
@@ -134,6 +135,10 @@ hl.on("hyprland.start", function()
 
     -- Additions for screen sharing per https://gist.github.com/brunoanc/2dea6ddf6974ba4e5d26c3139ffb7580
     hl.exec_cmd("dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP")
+
+    -- Clipboard history watcher: cliphist records every wl-clipboard selection so
+    -- the clipboard picker keybind can recall earlier copies.
+    hl.exec_cmd("wl-paste --watch cliphist store")
 
 end)
 
@@ -327,6 +332,13 @@ hl.bind(mainMod .. " + V", hl.dsp.window.float({ action = "toggle" }))
 hl.bind(mainMod .. " + P", hl.dsp.window.pseudo())
 -- Toggle the on-screen keyboard (non-touch fallback for the bottom-edge swipe).
 hl.bind(mainMod .. " + K", hl.dsp.exec_cmd(os.getenv("HOME") .. "/.config/hypr/scripts/squeek-toggle.sh"))
+
+-- Dictation toggle. The HP Assistant/Copilot button sends SUPER+SHIFT+F23 (the keymap
+-- labels it XF86Assistant at the shifted level, but Hyprland matches the base keysym F23).
+hl.bind("SUPER + SHIFT + F23", hl.dsp.exec_cmd("dictation-toggle"))
+hl.bind(mainMod .. " + SHIFT + D", hl.dsp.exec_cmd("DICTATION_NOPASTE=1 dictation-toggle"))
+-- Clipboard/transcript history picker (SUPER+V is window-float toggle, so SHIFT+V):
+hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("sh -c 'cliphist list | fuzzel --dmenu --with-nth 2 | cliphist decode | wl-copy'"))
 
 -- Move focus with mainMod + arrows
 hl.bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }))

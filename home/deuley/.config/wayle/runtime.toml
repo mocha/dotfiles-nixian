@@ -1,15 +1,3 @@
-[bar]
-scale = 1.0
-
-[modules.hyprland-workspaces]
-min-workspace-count = 4
-
-[wallpaper]
-cycling-enabled = true
-cycling-directory = "/home/deuley/Pictures/wallpapers/Misc"
-cycling-interval-mins = 18
-
-[[wallpaper.monitors]]
-name = ""
-fit-mode = "fill"
-wallpaper = ""
+# Runtime overlay (GUI / `wayle config set` writes here, overriding config.toml).
+# Intentionally empty: all settings live in config.toml as the source of truth.
+# Anything the config GUI changes will reappear here — fold it back into config.toml.
