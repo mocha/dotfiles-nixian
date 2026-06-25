@@ -2,19 +2,27 @@
 // Use @import "name" to bring in _name.scss from this folder.
 
 // Dictation indicator (custom-dictation module). The module sets a CSS class via
-// class-format = "dictation-{{ alt }}" → .dictation-idle / .dictation-recording / .dictation-down.
-// Symbolic icons inherit `color`, so tinting the node tints the mic glyph.
+// class-format = "dictation-{{ alt }}" → .dictation-idle / .dictation-nomic / .dictation-down /
+// .dictation-recording. Symbolic icons inherit `color`, so tinting the node tints the mic glyph.
+//
+// idle keeps the module's "auto" colour (orange, matching the keyboard module). The other states
+// are tinted here via Wayle's CSS palette tokens (--red, --fg-subtle). This only works because the
+// module's icon-color is "auto" — an explicit token would win over these rules.
 .dictation-recording,
 .dictation-recording image,
 .dictation-recording label {
-  color: #f38ba8; // catppuccin red — recording
+  color: #f38ba8; // recording — Catppuccin red (the "red"/battery token in this theme)
 }
 .dictation-recording {
   animation: dictation-pulse 1.2s ease-in-out infinite;
 }
-.dictation-down,
+
+// Unavailable: no headset connected (nomic) or server down. A plain dim grey reads as "off"
+// (the mic-off glyph already distinguishes it). Hardcoded because Wayle's --fg-subtle token
+// isn't exposed to GTK CSS var() here — close enough to the neighbouring subtle icons.
+.dictation-nomic image,
 .dictation-down image {
-  color: #6c7086; // dim — server down
+  color: #9399a4;
 }
 
 @keyframes dictation-pulse {

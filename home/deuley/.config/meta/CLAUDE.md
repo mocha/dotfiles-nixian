@@ -27,7 +27,12 @@ memory system and deep references live in [`docs/`](docs/).
 
 ### Elevation
 - Use **`pkexec`, never `sudo`** — agent sessions have no tty for sudo's askpass.
-  hyprpolkitagent surfaces the GUI auth prompt.
+  **soteria** (GTK polkit agent) surfaces the GUI auth prompt; auth is cached
+  ~5 min (`auth_admin_keep`), so a `cp`+`rebuild` pair usually prompts once.
+- **If `pkexec` fails with "Error creating textual authentication agent … /dev/tty"**,
+  no GUI agent is registered — soteria silently de-registers whenever `polkit.service`
+  restarts, which `nixos-rebuild` does every time. Relaunch it; full details + recovery
+  commands in [`docs/polkit.md`](docs/polkit.md).
 
 ### Dotfiles (tracking config in git)
 - Bare-repo pattern: **git-dir `~/.dotfiles`, work-tree `/`**. Driver is the `dot`
@@ -55,3 +60,10 @@ memory system and deep references live in [`docs/`](docs/).
 - [`docs/theming.md`](docs/theming.md) — how the Catppuccin Mocha (mauve) theme
   is wired across Qt-Widgets / QtQuick / GTK / Kvantum; leads with root-cause gotchas.
 - [`docs/hyprshell.md`](docs/hyprshell.md) — hyprshell launcher (Super+R) notes & gotchas.
+- [`docs/polkit.md`](docs/polkit.md) — polkit auth agent (soteria): component map, why
+  hyprpolkit was removed, and the `pkexec`-breaks-after-rebuild gotcha + recovery.
+- [`docs/power-thermal.md`](docs/power-thermal.md) — CPU power/thermal management:
+  intel_pstate HWP + firmware DPTF + power-profiles-daemon, and why we don't run thermald
+  (incl. the Panther Lake / CPUID 0xCC / thermald-≥2.5.9 gotcha).
+- [`docs/visage.md`](docs/visage.md) — face auth (sudo/pkexec/hyprlock): the HP/Luxvisions
+  IR-emitter quirk, patched fork at `~/code/visage`, hermetic Nix build, enroll/liveness gotchas.

@@ -93,9 +93,11 @@ hl.on("hyprland.start", function()
     -- (UWSM)" session, but that target stays inactive on the plain "Hyprland"
     -- session, leaving no registered agent (pkexec then falls back to the textual
     -- agent, needs /dev/tty, and dies for non-interactive callers like agents).
-    -- Starting the unit here makes it present on either session; idempotent, so
-    -- it's a harmless no-op when UWSM already started it.
-    hl.exec_cmd("systemctl --user start hyprpolkitagent.service")
+    -- soteria (GTK4) replaced hyprpolkitagent. It must run with the login
+    -- session's env: it reads XDG_SESSION_ID, which the systemd --user manager
+    -- doesn't carry, so a user service crash-loops ("Could not get XDG session
+    -- id"). Launching from here (compositor env) gives it the var, same as wayle.
+    hl.exec_cmd("soteria >/tmp/soteria.log 2>&1")
 
     -- Desktop shell: bar + notifications + OSD. Migrated from HyprPanel (which
     -- is deprecated upstream) to Wayle. Wayle owns org.freedesktop.Notifications,
@@ -158,8 +160,8 @@ hl.env("HYPRCURSOR_SIZE", "32")
 
 hl.config({
     general = {
-        gaps_in  = 6,
-        gaps_out = 10,
+        gaps_in  = 8,
+        gaps_out = 12,
         border_size = 2,
         col = {
             -- active_border   = { colors = {"rgba(203,166,247,0.8)", "rgba(244,166,247,0.8)"}, angle = 20 },
@@ -237,28 +239,29 @@ hl.animation({ leaf = "zoomFactor",    enabled = true, speed = 7,    bezier = "q
 
 -- Smart gaps: drop gaps/borders/rounding when only one window on these workspace patterns.
 -- These were broken in the .conf (used lua syntax without hl. prefix); now properly wired.
-hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
-hl.workspace_rule({ workspace = "f[1]",   gaps_out = 0, gaps_in = 0 })
-hl.window_rule({
-    name = "no-gaps-wtv1-border",
-    match = { float = false, workspace = "w[tv1]" },
-    border_size = 0,
-})
-hl.window_rule({
-    name = "no-gaps-wtv1-round",
-    match = { float = false, workspace = "w[tv1]" },
-    rounding = 0,
-})
-hl.window_rule({
-    name = "no-gaps-f1-border",
-    match = { float = false, workspace = "f[1]" },
-    border_size = 0,
-})
-hl.window_rule({
-    name = "no-gaps-f1-round",
-    match = { float = false, workspace = "f[1]" },
-    rounding = 0,
-})
+
+-- hl.workspace_rule({ workspace = "w[tv1]", gaps_out = 0, gaps_in = 0 })
+-- hl.workspace_rule({ workspace = "f[1]",   gaps_out = 0, gaps_in = 0 })
+-- hl.window_rule({
+--     name = "no-gaps-wtv1-border",
+--     match = { float = false, workspace = "w[tv1]" },
+--     border_size = 0,
+-- })
+-- hl.window_rule({
+--     name = "no-gaps-wtv1-round",
+--     match = { float = false, workspace = "w[tv1]" },
+--     rounding = 0,
+-- })
+-- hl.window_rule({
+--     name = "no-gaps-f1-border",
+--     match = { float = false, workspace = "f[1]" },
+--     border_size = 0,
+-- })
+-- hl.window_rule({
+--     name = "no-gaps-f1-round",
+--     match = { float = false, workspace = "f[1]" },
+--     rounding = 0,
+-- })
 
 
 ------------------

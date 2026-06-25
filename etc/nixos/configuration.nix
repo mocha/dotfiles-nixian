@@ -8,7 +8,55 @@
   imports = [
     # Include the results of the hardware scan.
     ./hardware-configuration.nix
+    # Visage face authentication — built from our fork pinned to an exact rev
+    # (mocha/visage @ nixos-hermetic-build) rather than a local checkout, so the
+    # build is reproducible from first principles. That branch is the upstream
+    # PR branch (feat/hp-omnibook-x-flip: HP OmniBook X Flip IR-camera support;
+    # the reset_on_close quirk in contrib/hw/30c9-0120.toml drives this laptop's
+    # Luxvisions camera) plus one commit adding the hermetic Nix build (ort
+    # load-dynamic + ORT_DYLIB_PATH, rustPlatform.bindgenHook).
+    # To bump: push the branch, then update rev + sha256 below
+    # (`nix-prefetch-url --unpack <archive-url>`). See docs/visage.md.
+    "${builtins.fetchTarball {
+      url = "https://github.com/mocha/visage/archive/c9bd3e8770dd1a2c52bbb97bcef637b60b6fc04b.tar.gz";
+      sha256 = "18qcfrz291hg2q5wwqxg45yibpprnxvb60254jkzj8fp5d754b58";
+    }}/packaging/nix/module.nix"
   ];
+
+  # --- Visage face authentication ---------------------------------------------
+  services.visage = {
+    enable = true;
+    camera = "/dev/video2";   # HP IR Camera (Luxvisions 30c9:0120)
+    pam.enable = false;       # PAM wired explicitly below for precise scope
+    # Anti-spoof liveness: genuine still-face attempts on this camera score
+    # ~0.5 eye-displacement; upstream's 0.8 default rejected them. 0.3 passes a
+    # real (near-still) face while still rejecting a static photo (~0.0).
+    liveness.minDisplacement = 0.3;
+  };
+
+  # The module's systemd hardening drops ALL capabilities, but the IR-emitter
+  # UVC ioctl (UVCIOC_CTRL_QUERY) needs CAP_SYS_ADMIN. Add it back for visaged.
+  systemd.services.visaged.serviceConfig = {
+    CapabilityBoundingSet = lib.mkForce [ "CAP_SYS_ADMIN" ];
+    AmbientCapabilities = [ "CAP_SYS_ADMIN" ];
+  };
+
+  # Face auth tried before password (password always falls through via
+  # default=ignore — cannot lock out). Scoped to terminal sudo, pkexec/polkit
+  # prompts, and the hyprlock lock screen. The ly boot greeter is intentionally
+  # left password-only.
+  security.pam.services =
+    let visageRule = {
+          order = 900;
+          control = "[success=done default=ignore]";
+          modulePath = "${config.services.visage.package}/lib/security/pam_visage.so";
+        };
+    in {
+      sudo.rules.auth.visage       = visageRule;
+      "polkit-1".rules.auth.visage = visageRule;
+      hyprlock.rules.auth.visage   = visageRule;
+    };
+  # --- end Visage -------------------------------------------------------------
 
   # Bootloader.
   boot.loader.systemd-boot.enable = true;
@@ -207,6 +255,10 @@ Run 'fwupdmgr update' to install."
   # whenever Anthropic ships a new claude-code. Refetched on rebuild
   # once the tarball TTL (~1h) expires.
   nix.settings = {
+    # Modern `nix` CLI + flake commands (nix shell/run/develop, flake-based
+    # installs). Declared here — not in ~/.config/nix/nix.conf — so the
+    # capability is reproducible and survives a from-scratch rebuild.
+    experimental-features = [ "nix-command" "flakes" ];
     substituters = [ "https://claude-code.cachix.org" ];
     trusted-public-keys = [
       "claude-code.cachix.org-1:YeXf2aNu7UTX8Vwrze0za1WEDS+4DuI2kVeWEE4fsRk="
@@ -298,18 +350,20 @@ Run 'fwupdmgr update' to install."
       kdePackages.dolphin # file manager
       kdePackages.kwalletmanager # GUI to view/delete KWallet secrets (e.g. stale smb guest creds)
       kdePackages.kwallet # kwalletd6 daemon + DBus activation (org.kde.kwalletd6) so the wallet can start on demand
-      mtr 		# modern tracert
-      eza 		# modern ls
+      mtr 		          # modern tracert
+      eza 		          # modern ls
       nfs-utils
       nix-search
       gparted
 
       # general
       spotify
-      slack
-      signal-desktop
-      playerctl 	# MPRIS control for XF86Audio{Next,Prev,Play,Pause}
-      loupe 		# image viewer
+      slack             # slack
+      signal-desktop    # signal
+      halloy            # irc
+      playerctl 	      # MPRIS control for XF86Audio{Next,Prev,Play,Pause}
+      loupe 		        # image viewer
+      vlc               # videolan
 
       claude-code 	# sandbrain
       zed-editor 	# zeditor
@@ -343,7 +397,7 @@ Run 'fwupdmgr update' to install."
 
       # hyprland - system
       hyprshutdown # graceful shutdowns
-      hyprpolkitagent # auth escalation daemon
+      soteria # polkit auth agent (GTK4) — replaced hyprpolkitagent so the dialog inherits the same GTK/Catppuccin/Monoflow look as wayle + hyprshell
       hyprtoolkit # theme utilities
       hyprland-qt-support
       hyprgraphics
@@ -378,8 +432,14 @@ Run 'fwupdmgr update' to install."
 
   # Polkit auth agent — surfaces auth prompts as a GUI dialog so pkexec
   # (and any other polkit client) works outside of a TTY.
-  systemd.packages = [ pkgs.hyprpolkitagent ];
-  systemd.user.services.hyprpolkitagent.wantedBy = [ "graphical-session.target" ];
+  #   soteria is a GTK4 agent, so its dialog follows the GTK theme + default
+  #   font (Catppuccin + Monoflow) exactly like wayle/hyprshell — no Qt theming
+  #   gymnastics. Replaced hyprpolkitagent (QtQuick, layout baked into its QML,
+  #   no padding control), which is why the qt6ct/qqc2 scoping below is gone.
+  #   NOTE: soteria reads XDG_SESSION_ID from its environment, which the systemd
+  #   --user manager does NOT carry (only the login session does). So it's
+  #   launched from hyprland.lua (exec, full session env) like wayle — a systemd
+  #   user service crash-loops with "Could not get XDG session id".
 
   # Qt theming → Catppuccin Mocha.
   #   platformTheme "kde" pulls plasma-integration — the KDE QPA bridge that maps
@@ -394,26 +454,18 @@ Run 'fwupdmgr update' to install."
     style = "kvantum";
   };
 
-  # hyprpolkitagent is a QtQuick app. Its dialog needs a QtQuick Controls style
-  # (else it's the bare "Basic" white box) AND a palette source. We scope qt6ct to
-  # THIS service only — globally it would break Dolphin (see above). qqc2-desktop-
-  # style then follows the qt6ct Catppuccin palette from ~/.config/qt6ct.
-  # Swap to "org.hyprland.style" here for the native Hyprland-rendered dialog.
-  systemd.user.services.hyprpolkitagent.environment = {
-    QT_QPA_PLATFORMTHEME = "qt5ct";
-    QT_QUICK_CONTROLS_STYLE = "org.kde.desktop";
-  };
-  # The global qt.style = "kvantum" exports QT_STYLE_OVERRIDE=kvantum, which leaks
-  # into this service and makes the QtQuick dialog try to load a non-existent
-  # "kvantum" Quick-Controls module — the dialog then fails to render, so no auth
-  # prompt ever appears and pkexec hangs. Strip it for this service only.
-  systemd.user.services.hyprpolkitagent.serviceConfig.UnsetEnvironment = "QT_STYLE_OVERRIDE";
 
   systemd.user.services.whisper-npu = {
     description = "Whisper NPU server (rootless podman, model kept warm)";
     wantedBy = [ "default.target" ];
     after = [ "default.target" ];
     unitConfig.ConditionUser = "deuley";
+    # Rootless podman execs `newuidmap`/`newgidmap` by name to set up the uid/gid map, and
+    # those are setuid wrappers that live only in /run/wrappers/bin — which is in the user's
+    # login PATH but NOT in a systemd --user unit's minimal PATH. Without this the container
+    # fails with "newuidmap: executable file not found in $PATH" (exit 125). crun/conmon/pasta
+    # are resolved via containers.conf, so the uid-map helpers are the only PATH dependency.
+    path = [ "/run/wrappers" ];
     serviceConfig = {
       ExecStartPre = "-${pkgs.podman}/bin/podman rm -f whisper-server";
       ExecStart = ''
@@ -477,9 +529,8 @@ Run 'fwupdmgr update' to install."
       accent = "mauve";
       variant = "mocha";
     }) # Kvantum theme for Qt-Widgets
-    qt6Packages.qt6ct # qt6 platform theme — provides the palette qqc2-desktop-style reads (scoped to hyprpolkitagent)
-    kdePackages.qqc2-desktop-style # QtQuick Controls desktop style → themes hyprpolkitagent
-    catppuccin-qt5ct # Catppuccin color schemes consumed by qt6ct
+    # (qt6ct / qqc2-desktop-style / catppuccin-qt5ct removed — they existed only to
+    #  theme the QtQuick hyprpolkitagent dialog, now replaced by GTK soteria.)
     (catppuccin-gtk.override {
       accents = [ "mauve" ];
       variant = "mocha";
@@ -496,6 +547,16 @@ Run 'fwupdmgr update' to install."
       install -Dm644 ${./fonts/monoflow}/*.otf -t $out/share/fonts/opentype
     '')
   ];
+
+  # Make Monoflow the OS-wide default for every generic family. Without this,
+  # `monospace` resolved to DejaVu Sans Mono and `sans-serif` to a system
+  # fallback — so apps that don't name a font explicitly (most of them) never
+  # picked up Monoflow. DejaVu stays as the fallback for glyphs Monoflow lacks.
+  fonts.fontconfig.defaultFonts = {
+    monospace = [ "Monoflow" "DejaVu Sans Mono" ];
+    sansSerif = [ "Monoflow" "DejaVu Sans" ];
+    serif     = [ "Monoflow" "DejaVu Serif" ];
+  };
 
   # Bluetooth
   hardware.bluetooth = {

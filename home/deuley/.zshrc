@@ -92,3 +92,5 @@ dot(){
     dotfiles $*
   fi
 }
+
+export COLORTERM=truecolor

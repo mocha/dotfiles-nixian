@@ -7,6 +7,8 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "buffer_font_weight": 300.0,
+  "ui_font_weight": 500.0,
   "buffer_font_family": "Monoflow",
   "agent_ui_font_size": 24.0,
   "cli_default_open_behavior": "new_window",
@@ -29,7 +31,7 @@
   },
   "buffer_line_height": "standard",
   "ui_font_family": "Monoflow",
-  "ui_font_size": 16.0,
-  "buffer_font_size": 16.0,
+  "ui_font_size": 14.0,
+  "buffer_font_size": 12.0,
   "theme": "Ayu Dark",
 }

@@ -1,3 +1,2 @@
-# Runtime overlay (GUI / `wayle config set` writes here, overriding config.toml).
-# Intentionally empty: all settings live in config.toml as the source of truth.
-# Anything the config GUI changes will reappear here — fold it back into config.toml.
+[bar]
+button-group-opacity = 74

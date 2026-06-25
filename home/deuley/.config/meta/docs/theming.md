@@ -15,13 +15,15 @@ Config is split across two places:
 | App type | Examples | Style/render | Colors come from |
 |---|---|---|---|
 | **Qt-Widgets** | Dolphin, moonlight-qt | Kvantum (`QT_STYLE_OVERRIDE=kvantum`) | **plasma-integration** maps `kdeglobals` → Qt palette |
-| **QtQuick** | hyprpolkitagent (polkit dialog) | `QT_QUICK_CONTROLS_STYLE` (qqc2-desktop-style) | qt6ct palette (scoped to the agent only) |
+| **GTK (polkit)** | soteria (polkit dialog) | GTK theme | catppuccin-gtk theme + GTK default font (Monoflow) |
 | **GTK 3/4** | Firefox, file dialogs | `gtk-theme-name` (but see gotcha #9) | catppuccin-gtk theme |
 | **GTK launcher** | hyprshell | catppuccin-gtk theme + custom `styles.css` | dconf `gtk-theme` + hyprshell CSS tokens |
 | **Notifications** | — | hyprpanel built-in daemon | hyprpanel config (Catppuccin) |
 
-The single most important fact: **KDE/Qt-Widgets apps and the QtQuick polkit dialog need DIFFERENT
-color mechanisms, and they conflict if you set them globally.** See "Root causes" below.
+The single most important fact: **KDE/Qt-Widgets apps color from plasma-integration (the `kde`
+platform theme) — do NOT set `qt6ct`/`qt5ct` globally or it fights Kvantum and breaks Dolphin.**
+See "Root causes" below. (The polkit dialog used to be the awkward exception here as a QtQuick app;
+it's now GTK soteria and just follows the GTK theme.)
 
 ---
 
@@ -96,27 +98,47 @@ Kvantum engine, `platformTheme="kde"` pulls plasma-integration + kio + systemset
 
 ---
 
-## Polkit dialog (hyprpolkitagent — QtQuick)
+## Polkit dialog (soteria — GTK4)
 
-Scoped so its qt6ct palette doesn't leak out and break Dolphin:
-```nix
-systemd.user.services.hyprpolkitagent.environment = {
-  QT_QPA_PLATFORMTHEME = "qt5ct";            # loads qt6ct just for this service
-  QT_QUICK_CONTROLS_STYLE = "org.kde.desktop"; # qqc2-desktop-style; reads qt6ct palette
-};
-```
-- Palette: `~/.config/qt6ct/qt6ct.conf` → `color_scheme_path = ~/.config/qt6ct/colors/catppuccin-mocha-mauve.conf`, `custom_palette=true`.
-- Packages: `qt6Packages.qt6ct`, `kdePackages.qqc2-desktop-style`, `catppuccin-qt5ct` (color scheme source).
-- **Alternative style:** set `QT_QUICK_CONTROLS_STYLE = "org.hyprland.style"` (from `hyprland-qt-support`)
-  for the native Hyprland-rendered dialog — different margins/padding/sizing, big bold title.
-  `org.kde.desktop` = Catppuccin via qt6ct; `org.hyprland.style` = self-contained dark, no qt6ct needed.
-- **Window identity** (for Hyprland window rules — class is empty, match on title):
-  `windowrule = ..., title:^(Hyprland Polkit Agent)$` — controls placement/size/opacity/dimaround, NOT
-  internal layout (that's compiled into the QML).
-- Possible simplification: now that plasma-integration is global, the dialog could likely use the
-  global `kde` theme and drop the scoped qt6ct entirely. Untested; current scoped setup works.
+**Replaced hyprpolkitagent (QtQuick) with `soteria` (2026-06-23.)** The old QtQuick dialog
+was over-wide, had no internal padding (layout baked into its QML), and needed a whole Qt-scoping
+contraption (qt6ct + qqc2-desktop-style + a per-service `UnsetEnvironment=QT_STYLE_OVERRIDE`).
+soteria is GTK4, so it just follows the **GTK theme + GTK default font** like wayle/hyprshell —
+dark Catppuccin surface, mauve accent, rounded, Monoflow. All the Qt scoping (and the
+`qt6ct`/`qqc2-desktop-style`/`catppuccin-qt5ct` packages) was deleted.
+
+- **Package:** `soteria`. No systemd unit and no config file needed (default config is fine;
+  optional `~/.config/soteria/config.toml` exists if you ever want to tweak it).
+- **GOTCHA — launch from the compositor, not a systemd user service.** soteria reads
+  `XDG_SESSION_ID` from its env. The systemd `--user` manager does **not** carry that var (only
+  the login session does), so a user service crash-loops: `Error: Could not get XDG session id`.
+  It's started from `~/.config/hypr/hyprland.lua` (`hl.exec_cmd("soteria …")`) inside the
+  `hyprland.start` handler — same pattern as wayle — which runs in the full session env. Don't
+  "promote" it back to a systemd unit without exporting `XDG_SESSION_ID` to the user manager first.
+- **Window identity** (Hyprland window rules): class `gay.vaskel.soteria`, title `Authorize`.
+- **Theming source:** GTK theme via dconf `gtk-theme` (catppuccin-mocha-mauve-standard) + the
+  GTK default font (Monoflow, see Fonts below). The mauve window border / rounding come from the
+  Hyprland decoration config, like every other window.
 
 ---
+
+## Fonts — Monoflow everywhere
+
+Goal: **Monoflow** (personally-licensed, OTFs in `/etc/nixos/fonts/monoflow`) as the single UI font,
+proportional and monospace alike. It's set at three layers because each toolkit resolves fonts
+differently — miss one and that toolkit silently falls back:
+
+1. **NixOS / fontconfig** (`configuration.nix`): `fonts.fontconfig.defaultFonts.{monospace,sansSerif,serif}
+   = [ "Monoflow" "DejaVu …" ]`. Without this, generic `monospace` resolved to **DejaVu Sans Mono**
+   and `sans-serif` to a system fallback — so anything not naming a font explicitly never got Monoflow.
+   Verify: `fc-match monospace` / `sans-serif` / `serif` should all say Monoflow.
+2. **GTK** (dconf wins — gotcha #9): `org.gnome.desktop.interface` `font-name` / `monospace-font-name` /
+   `document-font-name` = `Monoflow 10`; keep `~/.config/gtk-3.0/4.0/settings.ini` `gtk-font-name` in sync.
+3. **Qt-Widgets** (`~/.config/kdeglobals` `[General]`): `font`/`fixed`/`menuFont`/`toolBarFont`/
+   `smallestReadableFont = Monoflow,…` (plasma-integration reads these for KDE/Qt apps).
+
+Running GTK/Qt apps must be **restarted** to pick up a font change. wayle already names Monoflow in
+its own `config.toml` (`font-sans`/`font-mono`); soteria/hyprshell inherit it via the GTK layer.
 
 ## GTK (Firefox, GTK file dialogs)
 
@@ -194,13 +216,12 @@ The launcher (Super+R → Overview, then type). GTK4 app, so it follows the **GT
 
 | Path | Purpose |
 |---|---|
-| `/etc/nixos/configuration.nix` | `qt.*`, polkit agent drop-in, theme packages, `withUWSM` |
-| `~/.config/kdeglobals` | Catppuccin KColorScheme (palette source for KDE/Qt-Widgets) |
+| `/etc/nixos/configuration.nix` | `qt.*`, `fonts.fontconfig.defaultFonts`, theme/font packages, `soteria`, `withUWSM` |
+| `~/.config/hypr/hyprland.lua` | launches `soteria` (polkit agent) + wayle in the `hyprland.start` handler |
+| `~/.config/kdeglobals` | Catppuccin KColorScheme + Qt-Widgets font (`font`/`fixed`/… = Monoflow) |
 | `~/.local/share/color-schemes/CatppuccinMochaMauve.colors` | named scheme for KColorScheme resolution |
 | `~/.config/Kvantum/{kvantum.kvconfig, catppuccin-mocha-mauve/}` | Kvantum widget theme |
-| `~/.config/qt6ct/{qt6ct.conf, colors/}` | qt6ct palette (polkit dialog only) |
-| `~/.config/qt5ct/{qt5ct.conf, colors/}` | qt5ct palette (Qt5 fallback) |
-| `~/.config/gtk-3.0/settings.ini`, `gtk-4.0/settings.ini` | GTK theme name (but dconf wins — gotcha #9) |
+| `~/.config/gtk-3.0/settings.ini`, `gtk-4.0/settings.ini` | GTK theme + `gtk-font-name` (but dconf wins — gotcha #9) |
 | dconf `org.gnome.desktop.interface` | GTK theme/icon/font *actually* in effect (overrides settings.ini) |
 | `~/.config/xsettingsd/xsettingsd.conf` | XSettings theme name (only if xsettingsd runs; keep in sync) |
 | `~/.config/hyprshell/styles.css` | hyprshell launcher/overview Catppuccin CSS (overrides + tokens) |

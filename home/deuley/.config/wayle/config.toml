@@ -2,30 +2,28 @@
 font-sans = "Monoflow"
 font-mono = "Monoflow"
 
-
 [styling]
 scale = 1.0
 rounding = "md"
-
 
 [bar]
 scale = 1.0
 padding = 0.2
 padding-ends = 0.2
 module-gap = 0.2
-location = "top"
+location = "bottom"
 bg = "bg-base"
-button-variant = "basic"
 button-bg-opacity = 76
+button-gap = 0.7
+button-group-border-width = 14
+button-group-rounding = "md"
 button-icon-size = 0.8
 button-icon-padding = 1.1
 button-label-size = 0.8
 button-label-weight = "bold"
 button-label-padding = 1.25
 button-rounding = "md"
-button-gap = 0.7
-button-group-border-width = 14
-button-group-rounding = "md"
+button-variant = "basic"
 
 [[bar.layout]]
 monitor = "*"
@@ -95,11 +93,14 @@ format = "{{ output }}"
 tooltip-format = "{{ tooltip }}"
 hide-if-empty = false
 icon-name = "ld-mic-symbolic"
-icon-map = { idle = "ld-mic-symbolic", recording = "ld-mic-symbolic", down = "ld-mic-off-symbolic", default = "ld-mic-off-symbolic" }
+icon-map = { idle = "ld-mic-symbolic", recording = "ld-audio-lines-symbolic", nomic = "ld-mic-off-symbolic", down = "ld-mic-off-symbolic", default = "ld-mic-off-symbolic" }
 class-format = "dictation-{{ alt }}"
 icon-show = true
+# idle keeps the module's "auto" colour: auto + a blue icon-bg renders the same orange as the
+# keyboard module. recording/nomic/down are overridden in styles/index.scss — "auto" lets the
+# stylesheet win, whereas an explicit token would override it and the per-state colours wouldn't apply.
 icon-color = "auto"
-icon-bg-color = "bg-surface-elevated"
+icon-bg-color = "blue"
 label-show = false
 label-color = "auto"
 label-max-length = 0
@@ -123,10 +124,14 @@ app-icons-show = true
 workspace-padding = 0.6
 icon-size = 0.5
 label-size = 0.6
-occupied-color = "fg-subtle"
+occupied-color = "fg-muted"
 empty-color = "fg-muted"
 container-bg-color = "bg-active"
 border-show = true
+
+[modules.hyprland-workspaces.workspace-map.-98]
+label = "*"
+icon-bg-color = "blue"
 
 [modules.dashboard]
 border-show = true
@@ -135,21 +140,21 @@ icon-color = "blue"
 icon-bg-color = "blue"
 
 [modules.clock]
-format = "%I:%M %p"
 border-color = "status-info"
+button-bg-color = "transparent"
+format = "%I:%M %p"
 icon-show = false
 icon-color = "status-info"
 icon-bg-color = "transparent"
 label-color = "#ffffff"
-button-bg-color = "transparent"
 
 [modules.weather]
-location = "78218"
-units = "imperial"
-refresh-interval-seconds = 600
-icon-show = false
 button-bg-color = "transparent"
+icon-show = false
+location = "78218"
 label-color = "fg-muted"
+refresh-interval-seconds = 600
+units = "imperial"
 
 [modules.window-title]
 border-show = true
@@ -158,12 +163,13 @@ icon-color = "status-warning"
 icon-bg-color = "transparent"
 label-color = "status-warning"
 button-bg-color = "transparent"
+label-max-length = 20
 
 [modules.media]
+button-bg-color = "transparent"
 icon-color = "fg-muted"
 icon-bg-color = "bg-surface-elevated"
 label-color = "fg-muted"
-button-bg-color = "transparent"
 label-max-length = 20
 
 [modules.volume]
@@ -244,11 +250,10 @@ icon-show = false
 format = "N/d{{ down_auto }} / u{{ up_auto }}"
 icon-show = false
 
-
 [wallpaper]
 cycling-enabled = true
-cycling-directory = "/home/deuley/Pictures/wallpapers/Misc"
-cycling-interval-mins = 18
+cycling-directory = "/home/deuley/Pictures/wallpapers/Purple/"
+cycling-interval-mins = 1
 
 [[wallpaper.monitors]]
 name = ""

@@ -8,8 +8,8 @@ let
   src = fetchFromGitHub {
     owner = "mocha";
     repo = "nixian-dictation";
-    rev = "70c071b52420563d56b933703ab0442c829b2eb6";
-    sha256 = "085nv8w2fhi5g4q15swmjf9xqwlcrdflxg9c10jllaxj8z8fvbik";
+    rev = "3e798167dd611ddfbddee80cdd6b2cee5371382a";
+    sha256 = "0mj4h8d7rl1rb8spjh0bh6c4ljjz3vfhka1zfi6ff9z79qncmnl4";
   };
 in
 callPackage "${src}/default.nix" { }
